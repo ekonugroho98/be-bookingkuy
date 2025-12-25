@@ -9,13 +9,13 @@ type HotelbedsSearchResponse struct {
 
 // HotelbedsHotel represents hotel from Hotelbeds
 type HotelbedsHotel struct {
-	Code        string            `json:"code"`
-	Name        string            `json:"name"`
-	CountryCode string            `json:"countryCode"`
-	StateCode   string            `json:"stateCode"`
-	Destination Code              `json:"destination"`
+	Code        string                 `json:"code"`
+	Name        string                 `json:"name"`
+	CountryCode string                 `json:"countryCode"`
+	StateCode   string                 `json:"stateCode"`
+	Destination Code                   `json:"destination"`
 	Category    map[string]interface{} `json:"category"`
-	Images      []HotelbedsImage  `json:"images"`
+	Images      []HotelbedsImage       `json:"images"`
 }
 
 // Code represents destination code
@@ -26,41 +26,41 @@ type Code struct {
 
 // HotelbedsImage represents image from Hotelbeds
 type HotelbedsImage struct {
-	 imageURL `json:"imageTypeCode"`
-	RoomType string  `json:"roomType"`
+	ImageURL string `json:"imageURL"`
+	RoomType string `json:"roomType"`
 }
 
 // HotelbedsAvailabilityResponse represents availability response
 type HotelbedsAvailabilityResponse struct {
-	AuditData    map[string]interface{} `json:"auditData"`
-	Hotels       []HotelbedsAvailableHotel `json:"hotels"`
+	AuditData map[string]interface{}    `json:"auditData"`
+	Hotels    []HotelbedsAvailableHotel `json:"hotels"`
 }
 
 // HotelbedsAvailableHotel represents available hotel
 type HotelbedsAvailableHotel struct {
-	Code       string                      `json:"code"`
-	Name       string                      `json:"name"`
-	Category   map[string]interface{}       `json:"category"`
-	Images     []HotelbedsImage             `json:"images"`
-	Rooms      []HotelbedsRoom             `json:"rooms"`
+	Code     string                 `json:"code"`
+	Name     string                 `json:"name"`
+	Category map[string]interface{} `json:"category"`
+	Images   []HotelbedsImage       `json:"images"`
+	Rooms    []HotelbedsRoom        `json:"rooms"`
 }
 
 // HotelbedsRoom represents room from Hotelbeds
 type HotelbedsRoom struct {
-	Code        string              `json:"code"`
-	Name        string              `json:"name"`
-	Rates       []HotelbedsRate     `json:"rates"`
+	Code  string          `json:"code"`
+	Name  string          `json:"name"`
+	Rates []HotelbedsRate `json:"rates"`
 }
 
 // HotelbedsRate represents rate from Hotelbeds
 type HotelbedsRate struct {
-	RateKey       string  `json:"rateKey"`
-	RateType      string  `json:"rateType"`
-	NetPrice      float64 `json:"net"`
-	Allotment     int     `json:"allotment"`
-	Currency      string  `json:"currency"`
-	MealPlan      string  `json:"mealPlan"`
-	Cancellation  HotelbedsCancellation `json:"cancellation"`
+	RateKey      string                `json:"rateKey"`
+	RateType     string                `json:"rateType"`
+	NetPrice     float64               `json:"net"`
+	Allotment    int                   `json:"allotment"`
+	Currency     string                `json:"currency"`
+	MealPlan     string                `json:"mealPlan"`
+	Cancellation HotelbedsCancellation `json:"cancellation"`
 }
 
 // HotelbedsCancellation represents cancellation policy
@@ -70,9 +70,9 @@ type HotelbedsCancellation struct {
 
 // HotelbedsBookingRequest represents booking request to Hotelbeds
 type HotelbedsBookingRequest struct {
-	Holder     HotelbedsHolder       `json:"holder"`
-	Rooms      []HotelbedsRoomBooking `json:"rooms"`
-	ClientReference string            `json:"clientReference"`
+	Holder          HotelbedsHolder        `json:"holder"`
+	Rooms           []HotelbedsRoomBooking `json:"rooms"`
+	ClientReference string                 `json:"clientReference"`
 }
 
 // HotelbedsHolder represents holder information
@@ -83,13 +83,13 @@ type HotelbedsHolder struct {
 
 // HotelbedsRoomBooking represents room booking
 type HotelbedsRoomBooking struct {
-	RateKey  string `json:"rateKey"`
+	RateKey  string             `json:"rateKey"`
 	PaxRooms []HotelbedsPaxRoom `json:"paxRooms"`
 }
 
 // HotelbedsPaxRoom represents passenger room
 type HotelbedsPaxRoom struct {
-	PaxType string `json:"paxType"`
+	PaxType string           `json:"paxType"`
 	Guests  []HotelbedsGuest `json:"guests"`
 }
 
@@ -101,9 +101,9 @@ type HotelbedsGuest struct {
 
 // HotelbedsBookingResponse represents booking confirmation
 type HotelbedsBookingResponse struct {
-	BookingReference string `json:"bookingReference"`
+	BookingReference string                `json:"bookingReference"`
 	Hotel            HotelbedsHotelBooking `json:"hotel"`
-	Status           string `json:"status"`
+	Status           string                `json:"status"`
 }
 
 // HotelbedsHotelBooking represents hotel in booking response
