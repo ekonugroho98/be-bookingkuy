@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ekonugroho98/be-bookingkuy/internal/provider/types"
+	canonical "github.com/ekonugroho98/be-bookingkuy/internal/provider/types"
 )
 
 // Mapper handles conversion between Hotelbeds and canonical models
@@ -16,10 +16,10 @@ func NewMapper() *Mapper {
 }
 
 // ToCanonicalHotel converts Hotelbeds hotel to canonical model
-func (m *Mapper) ToCanonicalHotel(hbHotel HotelbedsHotel) *types.Hotel {
+func (m *Mapper) ToCanonicalHotel(hbHotel HotelbedsHotel) *canonical.Hotel {
 	rating := m.extractRating(hbHotel.Category)
 
-	return &types.Hotel{
+	return &canonical.Hotel{
 		ID:          "HB-" + hbHotel.Code,
 		Name:        hbHotel.Name,
 		CountryCode: hbHotel.CountryCode,
@@ -30,11 +30,11 @@ func (m *Mapper) ToCanonicalHotel(hbHotel HotelbedsHotel) *types.Hotel {
 }
 
 // ToCanonicalAvailability converts Hotelbeds availability response to canonical model
-func (m *Mapper) ToCanonicalAvailability(hbResponse HotelbedsAvailabilityResponse) *types.AvailabilityResponse {
-	hotels := make([]types.HotelAvailability, 0, len(hbResponse.Hotels))
+func (m *Mapper) ToCanonicalAvailability(hbResponse HotelbedsAvailabilityResponse) *canonical.AvailabilityResponse {
+	hotels := make([]canonical.HotelAvailability, 0, len(hbResponse.Hotels))
 
 	for _, hbHotel := range hbResponse.Hotels {
-		hotel := types.Hotel{
+		hotel := canonical.Hotel{
 			ID:          "HB-" + hbHotel.Code,
 			Name:        hbHotel.Name,
 			CountryCode: "ID",
@@ -44,30 +44,30 @@ func (m *Mapper) ToCanonicalAvailability(hbResponse HotelbedsAvailabilityRespons
 		}
 
 		rooms := m.toCanonicalRooms(hbHotel.Rooms)
-		hotels = append(hotels, types.HotelAvailability{
+		hotels = append(hotels, canonical.HotelAvailability{
 			Hotel: hotel,
 			Rooms: rooms,
 		})
 	}
 
-	return &types.AvailabilityResponse{
+	return &canonical.AvailabilityResponse{
 		Hotels: hotels,
 	}
 }
 
 // toCanonicalRooms converts Hotelbeds rooms to canonical rooms
-func (m *Mapper) toCanonicalRooms(hbRooms []HotelbedsRoom) []types.RoomRate {
-	rooms := make([]types.RoomRate, 0, len(hbRooms))
+func (m *Mapper) toCanonicalRooms(hbRooms []HotelbedsRoom) []canonical.RoomRate {
+	rooms := make([]canonical.RoomRate, 0, len(hbRooms))
 
 	for _, hbRoom := range hbRooms {
-		room := types.Room{
+		room := canonical.Room{
 			ID:      "HB-" + hbRoom.Code,
 			HotelID: "", // Will be filled by caller
 			Name:    hbRoom.Name,
 		}
 
 		rates := m.toCanonicalRates(hbRoom.Rates)
-		rooms = append(rooms, types.RoomRate{
+		rooms = append(rooms, canonical.RoomRate{
 			Room:  room,
 			Rates: rates,
 		})
@@ -77,13 +77,13 @@ func (m *Mapper) toCanonicalRooms(hbRooms []HotelbedsRoom) []types.RoomRate {
 }
 
 // toCanonicalRates converts Hotelbeds rates to canonical rates
-func (m *Mapper) toCanonicalRates(hbRates []HotelbedsRate) []types.Rate {
-	rates := make([]types.Rate, 0, len(hbRates))
+func (m *Mapper) toCanonicalRates(hbRates []HotelbedsRate) []canonical.Rate {
+	rates := make([]canonical.Rate, 0, len(hbRates))
 
 	for _, hbRate := range hbRates {
 		freeCancel := m.parseFreeCancellation(hbRate.Cancellation.FreeCancellationDate)
 
-		rate := types.Rate{
+		rate := canonical.Rate{
 			RoomID:    "HB-" + hbRate.RateKey, // Use rateKey as temporary ID
 			NetPrice:  int(hbRate.NetPrice),
 			Currency:  hbRate.Currency,
@@ -101,7 +101,7 @@ func (m *Mapper) toCanonicalRates(hbRates []HotelbedsRate) []types.Rate {
 }
 
 // ToHotelbedsBookingRequest converts canonical booking request to Hotelbeds format
-func (m *Mapper) ToHotelbedsBookingRequest(req *types.BookingRequest) HotelbedsBookingRequest {
+func (m *Mapper) ToHotelbedsBookingRequest(req *canonical.BookingRequest) HotelbedsBookingRequest {
 	// Create guest information
 	holder := HotelbedsHolder{
 		Name:    req.GuestInfo.FirstName,
@@ -132,14 +132,14 @@ func (m *Mapper) ToHotelbedsBookingRequest(req *types.BookingRequest) HotelbedsB
 }
 
 // ToCanonicalBookingConfirmation converts Hotelbeds booking response to canonical model
-func (m *Mapper) ToCanonicalBookingConfirmation(hbResponse HotelbedsBookingResponse, hotelID, roomID string, checkIn, checkOut time.Time, totalPrice int, currency string) *types.BookingConfirmation {
-	return &types.BookingConfirmation{
+func (m *Mapper) ToCanonicalBookingConfirmation(hbResponse HotelbedsBookingResponse, hotelID, roomID string, checkIn, checkOut time.Time, totalPrice int, currency string) *canonical.BookingConfirmation {
+	return &canonical.BookingConfirmation{
 		BookingID:         "HB-" + hbResponse.BookingReference,
 		ProviderReference: hbResponse.BookingReference,
-		Hotel: types.Hotel{
+		Hotel: canonical.Hotel{
 			ID: hotelID,
 		},
-		Room: types.Room{
+		Room: canonical.Room{
 			ID: roomID,
 		},
 		CheckIn:    checkIn,
