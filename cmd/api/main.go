@@ -15,6 +15,7 @@ import (
 	"github.com/ekonugroho98/be-bookingkuy/internal/midtrans"
 	"github.com/ekonugroho98/be-bookingkuy/internal/payment"
 	"github.com/ekonugroho98/be-bookingkuy/internal/pricing"
+	"github.com/ekonugroho98/be-bookingkuy/internal/review"
 	"github.com/ekonugroho98/be-bookingkuy/internal/search"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/config"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/db"
@@ -103,6 +104,11 @@ func main() {
 	adminService := admin.NewService(adminRepo, eb, cfg.JWT.Secret, 24*time.Hour)
 	adminHandler := admin.NewHandler(adminService, cfg.JWT.Secret)
 
+	// Initialize review service
+	reviewRepo := review.NewRepository(database.Pool)
+	reviewService := review.NewService(reviewRepo)
+	reviewHandler := review.NewHandler(reviewService, cfg.JWT.Secret)
+
 	// Initialize handlers
 	userHandler := user.NewHandler(userService)
 	authHandler := auth.NewHandler(authService)
@@ -140,6 +146,22 @@ func main() {
 	// User endpoints (protected)
 	mux.HandleFunc("GET /api/v1/users/me", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(userHandler.GetProfile)).ServeHTTP)
 	mux.HandleFunc("PUT /api/v1/users/me", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(userHandler.UpdateProfile)).ServeHTTP)
+
+	// Review endpoints (public + protected)
+	mux.HandleFunc("GET /api/v1/reviews/hotel/", reviewHandler.GetHotelReviews)
+	mux.HandleFunc("GET /api/v1/reviews/hotel/", reviewHandler.GetHotelStats)
+	mux.HandleFunc("GET /api/v1/reviews/", reviewHandler.GetReviewByID)
+	mux.HandleFunc("POST /api/v1/reviews", reviewHandler.CreateReview)
+	mux.HandleFunc("PUT /api/v1/reviews/", reviewHandler.UpdateReview)
+	mux.HandleFunc("DELETE /api/v1/reviews/", reviewHandler.DeleteReview)
+	mux.HandleFunc("GET /api/v1/reviews/my-reviews", reviewHandler.GetMyReviews)
+	mux.HandleFunc("POST /api/v1/reviews/", reviewHandler.ToggleHelpful)
+	mux.HandleFunc("POST /api/v1/reviews/", reviewHandler.FlagReview)
+
+	// Hotel partner endpoints (review responses)
+	mux.HandleFunc("POST /api/v1/hotels/", reviewHandler.AddHotelResponse)
+	mux.HandleFunc("PUT /api/v1/hotels/", reviewHandler.UpdateHotelResponse)
+	mux.HandleFunc("DELETE /api/v1/hotels/", reviewHandler.DeleteHotelResponse)
 
 	// Admin endpoints
 	// Public admin endpoints
@@ -182,6 +204,13 @@ func main() {
 
 	// Audit logs
 	mux.HandleFunc("GET /api/v1/admin/audit-logs", adminAuth(adminHandler.HandleAuditLogs))
+
+	// Review moderation (admin endpoints)
+	mux.HandleFunc("GET /api/v1/admin/reviews/pending", adminAuth(reviewHandler.GetPendingReviews))
+	mux.HandleFunc("GET /api/v1/admin/reviews/flagged", adminAuth(reviewHandler.GetFlaggedReviews))
+	mux.HandleFunc("PUT /api/v1/admin/reviews/", adminAuth(reviewHandler.ModerateReview))
+	mux.HandleFunc("GET /api/v1/admin/reviews/stats", adminAuth(reviewHandler.GetModerationStats))
+	mux.HandleFunc("GET /api/v1/admin/reviews/analytics", adminAuth(reviewHandler.GetAnalytics))
 
 	logger.Info("✅ Routes registered")
 
