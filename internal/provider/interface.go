@@ -3,6 +3,8 @@ package provider
 import (
 	"context"
 	"time"
+
+	"github.com/ekonugroho98/be-bookingkuy/internal/provider/types"
 )
 
 // Provider defines the interface that all providers must implement
@@ -12,13 +14,13 @@ type Provider interface {
 	Name() string
 
 	// SearchAvailability searches for available hotels
-	SearchAvailability(ctx context.Context, req *AvailabilityRequest) (*AvailabilityResponse, error)
+	SearchAvailability(ctx context.Context, req *types.AvailabilityRequest) (*types.AvailabilityResponse, error)
 
 	// GetHotelDetails retrieves detailed hotel information
-	GetHotelDetails(ctx context.Context, hotelID string) (*Hotel, error)
+	GetHotelDetails(ctx context.Context, hotelID string) (*types.Hotel, error)
 
 	// CreateBooking creates a booking with the provider
-	CreateBooking(ctx context.Context, req *BookingRequest) (*BookingConfirmation, error)
+	CreateBooking(ctx context.Context, req *types.BookingRequest) (*types.BookingConfirmation, error)
 
 	// CancelBooking cancels a booking
 	CancelBooking(ctx context.Context, bookingID string) error

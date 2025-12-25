@@ -63,25 +63,25 @@ func (h *HotelbedsProvider) SearchAvailability(ctx context.Context, req *Availab
 	// Parse and convert to canonical model
 	// TODO: Implement actual response parsing
 	// For now, return mock data converted through mapper
-	mockResponse := &AvailabilityResponse{
-		Hotels: []HotelAvailability{
+	mockResponse := &types.AvailabilityResponse{
+		Hotels: []types.HotelAvailability{
 			{
-				Hotel: Hotel{
+				Hotel: types.Hotel{
 					ID:          "HB-12345",
 					Name:        "Grand Hotel (Hotelbeds)",
 					CountryCode: "ID",
 					City:        req.City,
 					Rating:      4.5,
 				},
-				Rooms: []RoomRate{
+				Rooms: []types.RoomRate{
 					{
-						Room: Room{
+						Room: types.Room{
 							ID:       "HB-ROOM-1",
 							HotelID:  "HB-12345",
 							Name:     "Deluxe Room",
 							Capacity: 2,
 						},
-						Rates: []Rate{
+						Rates: []types.Rate{
 							{
 								RoomID:    "HB-ROOM-1",
 								NetPrice:  1500000,
@@ -116,7 +116,7 @@ func (h *HotelbedsProvider) GetHotelDetails(ctx context.Context, hotelID string)
 	defer resp.Body.Close()
 
 	// TODO: Parse actual response
-	return &Hotel{
+	return &types.Hotel{
 		ID:     hotelID,
 		Name:   "Sample Hotel from Hotelbeds",
 		City:   "Jakarta",
@@ -125,7 +125,7 @@ func (h *HotelbedsProvider) GetHotelDetails(ctx context.Context, hotelID string)
 }
 
 // CreateBooking creates a booking on Hotelbeds
-func (h *HotelbedsProvider) CreateBooking(ctx context.Context, req *BookingRequest) (*BookingConfirmation, error) {
+func (h *HotelbedsProvider) CreateBooking(ctx context.Context, req *types.BookingRequest) (*types.BookingConfirmation, error) {
 	logger.Infof("Creating booking on Hotelbeds for hotel %s", req.HotelID)
 
 	// Convert to Hotelbeds request format
@@ -140,7 +140,7 @@ func (h *HotelbedsProvider) CreateBooking(ctx context.Context, req *BookingReque
 	defer resp.Body.Close()
 
 	// TODO: Parse actual response
-	confirmation := &BookingConfirmation{
+	confirmation := &types.BookingConfirmation{
 		BookingID:         fmt.Sprintf("HB-%d", time.Now().Unix()),
 		ProviderReference: fmt.Sprintf("HBS-%d", time.Now().Unix()),
 		Status:            "CONFIRMED",

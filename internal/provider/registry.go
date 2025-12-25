@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/ekonugroho98/be-bookingkuy/internal/provider/types"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/logger"
 )
 
@@ -74,7 +75,7 @@ func (r *Registry) GetByPriority(ctx context.Context) []Provider {
 }
 
 // SearchAll searches all providers and aggregates results
-func (r *Registry) SearchAll(ctx context.Context, req *AvailabilityRequest) (*AvailabilityResponse, error) {
+func (r *Registry) SearchAll(ctx context.Context, req *types.AvailabilityRequest) (*types.AvailabilityResponse, error) {
 	healthyProviders := r.GetHealthy(ctx)
 	if len(healthyProviders) == 0 {
 		return nil, fmt.Errorf("no healthy providers available")
@@ -88,7 +89,7 @@ func (r *Registry) SearchAll(ctx context.Context, req *AvailabilityRequest) (*Av
 }
 
 // CreateBookingWithFallback creates booking with automatic failover
-func (r *Registry) CreateBookingWithFallback(ctx context.Context, req *BookingRequest) (*BookingConfirmation, error) {
+func (r *Registry) CreateBookingWithFallback(ctx context.Context, req *types.BookingRequest) (*types.BookingConfirmation, error) {
 	providers := r.GetByPriority(ctx)
 
 	for _, provider := range providers {
