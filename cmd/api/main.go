@@ -9,6 +9,9 @@ import (
 	"syscall"
 
 	"github.com/ekonugroho98/be-bookingkuy/internal/auth"
+	"github.com/ekonugroho98/be-bookingkuy/internal/booking"
+	"github.com/ekonugroho98/be-bookingkuy/internal/payment"
+	"github.com/ekonugroho98/be-bookingkuy/internal/pricing"
 	"github.com/ekonugroho98/be-bookingkuy/internal/search"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/config"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/db"
@@ -54,6 +57,17 @@ func main() {
 	// Subscribe to auth events
 	eb.Subscribe(context.Background(), eventbus.EventUserCreated, auth.HandleUserCreated)
 
+	// Subscribe to booking events
+	eb.Subscribe(context.Background(), eventbus.EventBookingCreated, booking.HandleBookingCreated)
+	eb.Subscribe(context.Background(), eventbus.EventBookingPaid, booking.HandleBookingPaid)
+	eb.Subscribe(context.Background(), eventbus.EventBookingConfirmed, booking.HandleBookingConfirmed)
+	eb.Subscribe(context.Background(), eventbus.EventBookingCancelled, booking.HandleBookingCancelled)
+
+	// Subscribe to payment events
+	eb.Subscribe(context.Background(), eventbus.EventPaymentSuccess, payment.HandlePaymentSuccess)
+	eb.Subscribe(context.Background(), eventbus.EventPaymentFailed, payment.HandlePaymentFailed)
+	eb.Subscribe(context.Background(), eventbus.EventPaymentRefunded, payment.HandlePaymentRefunded)
+
 	logger.Info("✅ Event bus initialized")
 
 	// Initialize JWT manager
@@ -68,11 +82,16 @@ func main() {
 	userService := user.NewService(userRepo, eb)
 	authService := auth.NewService(userRepo, authRepo, eb, jwtManager)
 	searchService := search.NewService(search.NewRepository(database))
+	pricingService := pricing.NewService()
+	bookingService := booking.NewService(booking.NewRepository(database), eb, pricingService)
+	paymentService := payment.NewService(payment.NewRepository(database), eb)
 
 	// Initialize handlers
 	userHandler := user.NewHandler(userService)
 	authHandler := auth.NewHandler(authService)
 	searchHandler := search.NewHandler(searchService)
+	bookingHandler := booking.NewHandler(bookingService)
+	paymentHandler := payment.NewHandler(paymentService)
 
 	// Setup router
 	mux := http.NewServeMux()
@@ -89,6 +108,17 @@ func main() {
 
 	// Search endpoints (public)
 	mux.HandleFunc("POST /api/v1/search/hotels", searchHandler.SearchHotels)
+
+	// Booking endpoints (protected)
+	mux.HandleFunc("POST /api/v1/bookings", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(bookingHandler.CreateBooking)).ServeHTTP)
+	mux.HandleFunc("GET /api/v1/bookings/{id}", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(bookingHandler.GetBooking)).ServeHTTP)
+	mux.HandleFunc("GET /api/v1/bookings/my", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(bookingHandler.GetMyBookings)).ServeHTTP)
+	mux.HandleFunc("POST /api/v1/bookings/{id}/cancel", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(bookingHandler.CancelBooking)).ServeHTTP)
+
+	// Payment endpoints (protected + webhook)
+	mux.HandleFunc("POST /api/v1/payments", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(paymentHandler.CreatePayment)).ServeHTTP)
+	mux.HandleFunc("GET /api/v1/payments/{id}", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(paymentHandler.GetPayment)).ServeHTTP)
+	mux.HandleFunc("POST /api/v1/payments/webhook", paymentHandler.HandleWebhook) // Public endpoint for webhooks
 
 	// User endpoints (protected)
 	mux.HandleFunc("GET /api/v1/users/me", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(userHandler.GetProfile)).ServeHTTP)
