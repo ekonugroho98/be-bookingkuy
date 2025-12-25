@@ -8,12 +8,17 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/ekonugroho98/be-bookingkuy/internal/auth"
+	"github.com/ekonugroho98/be-bookingkuy/internal/search"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/config"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/db"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/eventbus"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/health"
+	"github.com/ekonugroho98/be-bookingkuy/internal/shared/jwt"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/logger"
+	"github.com/ekonugroho98/be-bookingkuy/internal/shared/middleware"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/server"
+	"github.com/ekonugroho98/be-bookingkuy/internal/user"
 )
 
 func main() {
@@ -43,9 +48,31 @@ func main() {
 
 	logger.Info("✅ Database connected")
 
-	// Initialize event bus (unused for now, will be used in Phase 2+)
-	_ = eventbus.New()
+	// Initialize event bus
+	eb := eventbus.New()
+
+	// Subscribe to auth events
+	eb.Subscribe(context.Background(), eventbus.EventUserCreated, auth.HandleUserCreated)
+
 	logger.Info("✅ Event bus initialized")
+
+	// Initialize JWT manager
+	jwtManager := jwt.NewManager(cfg.JWT.Secret)
+	logger.Info("✅ JWT manager initialized")
+
+	// Initialize repositories
+	userRepo := user.NewRepository(database)
+	authRepo := auth.NewRepository(database)
+
+	// Initialize services
+	userService := user.NewService(userRepo, eb)
+	authService := auth.NewService(userRepo, authRepo, eb, jwtManager)
+	searchService := search.NewService(search.NewRepository(database))
+
+	// Initialize handlers
+	userHandler := user.NewHandler(userService)
+	authHandler := auth.NewHandler(authService)
+	searchHandler := search.NewHandler(searchService)
 
 	// Setup router
 	mux := http.NewServeMux()
@@ -56,10 +83,16 @@ func main() {
 	mux.HandleFunc("/health/ready", healthHandler.Ready)
 	mux.HandleFunc("/health/live", healthHandler.Live)
 
-	// TODO: Register API routes
-	// mux.HandleFunc("/api/v1/auth/register", ...)
-	// mux.HandleFunc("/api/v1/search/hotels", ...)
-	// etc.
+	// Auth endpoints (public)
+	mux.HandleFunc("POST /api/v1/auth/register", authHandler.Register)
+	mux.HandleFunc("POST /api/v1/auth/login", authHandler.Login)
+
+	// Search endpoints (public)
+	mux.HandleFunc("POST /api/v1/search/hotels", searchHandler.SearchHotels)
+
+	// User endpoints (protected)
+	mux.HandleFunc("GET /api/v1/users/me", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(userHandler.GetProfile)).ServeHTTP)
+	mux.HandleFunc("PUT /api/v1/users/me", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(userHandler.UpdateProfile)).ServeHTTP)
 
 	logger.Info("✅ Routes registered")
 

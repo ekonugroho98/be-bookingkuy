@@ -2,9 +2,11 @@ package user
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/logger"
+	"github.com/ekonugroho98/be-bookingkuy/internal/shared/middleware"
 )
 
 // Handler handles HTTP requests for user operations
@@ -21,38 +23,67 @@ func NewHandler(service Service) *Handler {
 
 // GetProfile handles GET /users/me
 func (h *Handler) GetProfile(w http.ResponseWriter, r *http.Request) {
-	// TODO: Extract user ID from JWT context
-	userID := "placeholder-user-id"
-
-	user, err := h.service.GetProfile(r.Context(), userID)
-	if err != nil {
-		logger.Error("Failed to get user profile: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+	// Extract user ID from JWT context
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		respondWithError(w, http.StatusUnauthorized, "User ID not found in request")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	user, err := h.service.GetProfile(r.Context(), userID)
+	if err != nil {
+		logger.ErrorWithErr(err, "Failed to get user profile")
+		if errors.Is(err, ErrUserNotFound) {
+			respondWithError(w, http.StatusNotFound, "User not found")
+		} else {
+			respondWithError(w, http.StatusInternalServerError, "Internal server error")
+		}
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, user)
 }
 
 // UpdateProfile handles PUT /users/me
 func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	var user User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	// Extract user ID from JWT context
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		respondWithError(w, http.StatusUnauthorized, "User ID not found in request")
 		return
 	}
 
-	// TODO: Extract user ID from JWT context
-	user.ID = "placeholder-user-id"
-
-	if err := h.service.UpdateProfile(r.Context(), &user); err != nil {
-		logger.Error("Failed to update user profile: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+	var req UpdateUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Profile updated successfully"})
+	user, err := h.service.UpdateProfile(r.Context(), userID, &req)
+	if err != nil {
+		logger.ErrorWithErr(err, "Failed to update user profile")
+		respondWithError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "Profile updated successfully",
+		"user":    user,
+	})
 }
+
+// Helper functions for HTTP responses
+func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(payload)
+}
+
+func respondWithError(w http.ResponseWriter, status int, message string) {
+	respondWithJSON(w, status, map[string]string{"error": message})
+}
+
+// Error definitions
+var (
+	ErrUserNotFound = errors.New("user not found")
+)
