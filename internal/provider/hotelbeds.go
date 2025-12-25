@@ -30,7 +30,7 @@ func (h *HotelbedsProvider) Name() string {
 }
 
 // SearchAvailability searches for available hotels on Hotelbeds
-func (h *HotelbedsProvider) SearchAvailability(ctx context.Context, req *AvailabilityRequest) (*AvailabilityResponse, error) {
+func (h *HotelbedsProvider) SearchAvailability(ctx context.Context, req *types.AvailabilityRequest) (*types.AvailabilityResponse, error) {
 	logger.Infof("Searching Hotelbeds availability for %s from %s to %s",
 		req.City, req.CheckIn.Format("2006-01-02"), req.CheckOut.Format("2006-01-02"))
 
@@ -99,7 +99,7 @@ func (h *HotelbedsProvider) SearchAvailability(ctx context.Context, req *Availab
 }
 
 // GetHotelDetails retrieves hotel details from Hotelbeds
-func (h *HotelbedsProvider) GetHotelDetails(ctx context.Context, hotelID string) (*Hotel, error) {
+func (h *HotelbedsProvider) GetHotelDetails(ctx context.Context, hotelID string) (*types.Hotel, error) {
 	logger.Infof("Getting Hotelbeds hotel details: %s", hotelID)
 
 	// Remove HB- prefix if present
