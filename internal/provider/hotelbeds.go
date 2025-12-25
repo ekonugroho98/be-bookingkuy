@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/ekonugroho98/be-bookingkuy/internal/provider/hotelbeds"
+	"github.com/ekonugroho98/be-bookingkuy/internal/hotelbeds"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/logger"
 )
 
