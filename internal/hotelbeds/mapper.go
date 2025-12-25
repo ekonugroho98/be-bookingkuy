@@ -89,7 +89,7 @@ func (m *Mapper) toCanonicalRates(hbRates []HotelbedsRate) []canonical.Rate {
 			Currency:  hbRate.Currency,
 			Allotment: hbRate.Allotment,
 			MealPlan:  hbRate.MealPlan,
-			Cancellation: provider.CancellationPolicy{
+			Cancellation: canonical.CancellationPolicy{
 				FreeCancellationBefore: freeCancel,
 				NonRefundable:           freeCancel.IsZero(),
 			},
