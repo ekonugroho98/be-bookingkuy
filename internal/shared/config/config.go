@@ -1,11 +1,22 @@
 package config
 
+import (
+	"fmt"
+	"strings"
+
+	"github.com/spf13/viper"
+)
+
 // Config holds all configuration for the application
 type Config struct {
-	Database DatabaseConfig
-	Redis    RedisConfig
-	Server   ServerConfig
-	JWT      JWTConfig
+	Environment string
+	Database    DatabaseConfig
+	Redis       RedisConfig
+	Server      ServerConfig
+	JWT         JWTConfig
+	Hotelbeds   HotelbedsConfig
+	Midtrans    MidtransConfig
+	SendGrid    SendGridConfig
 }
 
 type DatabaseConfig struct {
@@ -14,12 +25,14 @@ type DatabaseConfig struct {
 	Name     string
 	User     string
 	Password string
+	SSLMode  string
 }
 
 type RedisConfig struct {
 	Host     string
 	Port     string
 	Password string
+	DB       int
 }
 
 type ServerConfig struct {
@@ -32,29 +45,113 @@ type JWTConfig struct {
 	Expiration string
 }
 
-// Load loads configuration from environment
-func Load() *Config {
-	// TODO: Implement environment variable loading
-	return &Config{
-		Database: DatabaseConfig{
-			Host:     "localhost",
-			Port:     "5432",
-			Name:     "bookingkuy_db",
-			User:     "bookingkuy",
-			Password: "bookingkuy_dev_password",
-		},
-		Redis: RedisConfig{
-			Host:     "localhost",
-			Port:     "6379",
-			Password: "",
-		},
-		Server: ServerConfig{
-			Host: "0.0.0.0",
-			Port: "8080",
-		},
-		JWT: JWTConfig{
-			Secret:     "dev-secret-key",
-			Expiration: "24h",
-		},
+type HotelbedsConfig struct {
+	APIKey  string
+	Secret  string
+	BaseURL string
+}
+
+type MidtransConfig struct {
+	MerchantID string
+	ClientKey  string
+	ServerKey  string
+}
+
+type SendGridConfig struct {
+	APIKey    string
+	FromEmail string
+}
+
+// Load loads configuration from environment variables
+func Load() (*Config, error) {
+	viper.SetEnvPrefix("BOOKINGKUY")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
+
+	// Set defaults
+	setDefaults()
+
+	// Read from .env file if exists
+	viper.SetConfigFile(".env")
+	viper.SetConfigType("env")
+	if err := viper.ReadInConfig(); err != nil {
+		// .env file is optional
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return nil, fmt.Errorf("error reading config file: %w", err)
+		}
 	}
+
+	cfg := &Config{}
+
+	// Bind environment variables
+	if err := viper.Unmarshal(cfg); err != nil {
+		return nil, fmt.Errorf("error unmarshaling config: %w", err)
+	}
+
+	// Validate required configuration
+	if err := validate(cfg); err != nil {
+		return nil, fmt.Errorf("config validation failed: %w", err)
+	}
+
+	return cfg, nil
+}
+
+func setDefaults() {
+	// Server
+	viper.SetDefault("server.host", "0.0.0.0")
+	viper.SetDefault("server.port", "8080")
+
+	// Database
+	viper.SetDefault("database.host", "localhost")
+	viper.SetDefault("database.port", "5432")
+	viper.SetDefault("database.name", "bookingkuy_db")
+	viper.SetDefault("database.user", "bookingkuy")
+	viper.SetDefault("database.sslmode", "disable")
+
+	// Redis
+	viper.SetDefault("redis.host", "localhost")
+	viper.SetDefault("redis.port", "6379")
+	viper.SetDefault("redis.db", 0)
+
+	// JWT
+	viper.SetDefault("jwt.expiration", "24h")
+
+	// Environment
+	viper.SetDefault("environment", "development")
+
+	// Hotelbeds
+	viper.SetDefault("hotelbeds.baseurl", "https://api.hotelbeds.com")
+
+	// SendGrid
+	viper.SetDefault("sendgrid.fromemail", "noreply@bookingkuy.com")
+}
+
+func validate(cfg *Config) error {
+	if cfg.Database.Host == "" {
+		return fmt.Errorf("database host is required")
+	}
+	if cfg.Database.Name == "" {
+		return fmt.Errorf("database name is required")
+	}
+	if cfg.Database.User == "" {
+		return fmt.Errorf("database user is required")
+	}
+	if cfg.Server.Port == "" {
+		return fmt.Errorf("server port is required")
+	}
+	if cfg.JWT.Secret == "" {
+		return fmt.Errorf("JWT secret is required")
+	}
+
+	// For production, check for sensitive configurations
+	if cfg.Environment == "production" {
+		if cfg.Database.Password == "" {
+			return fmt.Errorf("database password is required in production")
+		}
+		if cfg.JWT.Secret == "dev-secret-key" || cfg.JWT.Secret == "dev-secret-key-change-in-production" {
+			return fmt.Errorf("JWT secret must be changed in production")
+		}
+	}
+
+	return nil
 }

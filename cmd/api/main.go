@@ -3,19 +3,25 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/config"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/logger"
 )
 
 func main() {
+	// Load configuration
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading configuration: %v\n", err)
+		os.Exit(1)
+	}
+
 	// Initialize logger
 	logger.Init()
 
-	// Load configuration
-	cfg := config.Load()
-
 	logger.Info("Starting Bookingkuy API Server...")
+	logger.Info("Environment: %s", cfg.Environment)
 	logger.Info("Database: %s@%s:%s/%s", cfg.Database.User, cfg.Database.Host, cfg.Database.Port, cfg.Database.Name)
 	logger.Info("Redis: %s:%s", cfg.Redis.Host, cfg.Redis.Port)
 	logger.Info("Server: %s:%s", cfg.Server.Host, cfg.Server.Port)
@@ -25,6 +31,6 @@ func main() {
 	// TODO: Initialize HTTP server
 	// TODO: Register routes
 
-	fmt.Println("✅ Bookingkuy API is ready!")
-	log.Fatal("Server started (placeholder)")
+	logger.Info("✅ Bookingkuy API is ready!")
+	log.Fatal("Server started (placeholder - TODO: Implement HTTP server)")
 }
