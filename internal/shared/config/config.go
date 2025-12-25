@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -17,6 +18,7 @@ type Config struct {
 	Hotelbeds   HotelbedsConfig
 	Midtrans    MidtransConfig
 	SendGrid    SendGridConfig
+	RabbitMQ    RabbitMQConfig
 }
 
 type DatabaseConfig struct {
@@ -52,14 +54,24 @@ type HotelbedsConfig struct {
 }
 
 type MidtransConfig struct {
-	MerchantID string
-	ClientKey  string
-	ServerKey  string
+	MerchantID   string
+	ClientKey    string
+	ServerKey    string
+	IsProduction bool
 }
 
 type SendGridConfig struct {
 	APIKey    string
 	FromEmail string
+}
+
+type RabbitMQConfig struct {
+	Host           string
+	Port           string
+	User           string
+	Password       string
+	VHost          string
+	ReconnectDelay time.Duration
 }
 
 // Load loads configuration from environment variables
@@ -122,8 +134,19 @@ func setDefaults() {
 	// Hotelbeds
 	viper.SetDefault("hotelbeds.baseurl", "https://api.hotelbeds.com")
 
+	// Midtrans
+	viper.SetDefault("midtrans.isproduction", false)
+
 	// SendGrid
 	viper.SetDefault("sendgrid.fromemail", "noreply@bookingkuy.com")
+
+	// RabbitMQ
+	viper.SetDefault("rabbitmq.host", "localhost")
+	viper.SetDefault("rabbitmq.port", "5672")
+	viper.SetDefault("rabbitmq.user", "guest")
+	viper.SetDefault("rabbitmq.password", "guest")
+	viper.SetDefault("rabbitmq.vhost", "/")
+	viper.SetDefault("rabbitmq.reconnectdelay", "5s")
 }
 
 func validate(cfg *Config) error {

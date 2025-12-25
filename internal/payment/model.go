@@ -69,4 +69,12 @@ type WebhookPayload struct {
 	ProviderRef     string `json:"provider_reference"`
 	Status          string `json:"status"`
 	Signature       string `json:"signature"`
+
+	// Midtrans specific fields
+	OrderID         string `json:"order_id,omitempty"`
+	StatusCode      string `json:"status_code,omitempty"`
+	GrossAmount     string `json:"gross_amount,omitempty"`
+	SignatureKey    string `json:"signature_key,omitempty"`
+	PaymentType     string `json:"payment_type,omitempty"`
+	TransactionStatus string `json:"transaction_status,omitempty"`
 }

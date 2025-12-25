@@ -14,25 +14,25 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o api ./cmd/api
 
 # Runtime stage
 FROM alpine:latest
 
 WORKDIR /app
 
-# Install ca-certificates for HTTPS calls
-RUN apk --no-cache add ca-certificates curl
+# Install ca-certificates for HTTPS
+RUN apk --no-cache add ca-certificates wget
 
-# Copy the binary from builder
-COPY --from=builder /app/main .
+# Copy binary from builder
+COPY --from=builder /app/api .
 
 # Expose port
 EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
-# Run the binary
-CMD ["./main"]
+# Run the application
+CMD ["./api"]

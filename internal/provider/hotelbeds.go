@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ekonugroho98/be-bookingkuy/internal/hotelbeds"
+	"github.com/ekonugroho98/be-bookingkuy/internal/provider/types"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/logger"
 )
 

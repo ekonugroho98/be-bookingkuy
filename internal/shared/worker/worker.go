@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -18,11 +19,11 @@ type Job struct {
 
 // Worker manages background jobs
 type Worker struct {
-	jobs     map[string]*Job
-	running  bool
-	mu       sync.RWMutex
-	cancel   context.CancelFunc
-	wg       sync.WaitGroup
+	jobs    map[string]*Job
+	running bool
+	mu      sync.RWMutex
+	cancel  context.CancelFunc
+	wg      sync.WaitGroup
 }
 
 // New creates a new worker
@@ -110,7 +111,8 @@ func (w *Worker) ExecuteOnce(ctx context.Context, jobID string) error {
 	w.mu.RUnlock()
 
 	if !exists {
-		return logger.Errorf("Job not found: %s", jobID)
+		logger.Errorf("Job not found: %s", jobID)
+		return fmt.Errorf("job not found: %s", jobID)
 	}
 
 	return job.Handler(ctx)

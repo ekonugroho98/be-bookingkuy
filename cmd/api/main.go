@@ -7,9 +7,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/ekonugroho98/be-bookingkuy/internal/admin"
 	"github.com/ekonugroho98/be-bookingkuy/internal/auth"
 	"github.com/ekonugroho98/be-bookingkuy/internal/booking"
+	"github.com/ekonugroho98/be-bookingkuy/internal/midtrans"
 	"github.com/ekonugroho98/be-bookingkuy/internal/payment"
 	"github.com/ekonugroho98/be-bookingkuy/internal/pricing"
 	"github.com/ekonugroho98/be-bookingkuy/internal/search"
@@ -74,6 +77,15 @@ func main() {
 	jwtManager := jwt.NewManager(cfg.JWT.Secret)
 	logger.Info("✅ JWT manager initialized")
 
+	// Initialize Midtrans client
+	midtransClient := midtrans.NewClient(midtrans.Config{
+		ServerKey:    cfg.Midtrans.ServerKey,
+		ClientKey:    cfg.Midtrans.ClientKey,
+		MerchantID:   cfg.Midtrans.MerchantID,
+		IsProduction: cfg.Midtrans.IsProduction,
+	})
+	logger.Info("✅ Midtrans client initialized")
+
 	// Initialize repositories
 	userRepo := user.NewRepository(database)
 	authRepo := auth.NewRepository(database)
@@ -84,7 +96,12 @@ func main() {
 	searchService := search.NewService(search.NewRepository(database))
 	pricingService := pricing.NewService()
 	bookingService := booking.NewService(booking.NewRepository(database), eb, pricingService)
-	paymentService := payment.NewService(payment.NewRepository(database), eb)
+	paymentService := payment.NewServiceWithMidtrans(payment.NewRepository(database), eb, midtransClient)
+
+	// Initialize admin service
+	adminRepo := admin.NewRepository(database.Pool)
+	adminService := admin.NewService(adminRepo, eb, cfg.JWT.Secret, 24*time.Hour)
+	adminHandler := admin.NewHandler(adminService, cfg.JWT.Secret)
 
 	// Initialize handlers
 	userHandler := user.NewHandler(userService)
@@ -123,6 +140,48 @@ func main() {
 	// User endpoints (protected)
 	mux.HandleFunc("GET /api/v1/users/me", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(userHandler.GetProfile)).ServeHTTP)
 	mux.HandleFunc("PUT /api/v1/users/me", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(userHandler.UpdateProfile)).ServeHTTP)
+
+	// Admin endpoints
+	// Public admin endpoints
+	mux.HandleFunc("POST /api/v1/admin/login", adminHandler.HandleLogin)
+
+	// Protected admin endpoints
+	adminAuth := adminHandler.AuthMiddleware
+	mux.HandleFunc("POST /api/v1/admin/logout", adminAuth(adminHandler.HandleLogout))
+	mux.HandleFunc("GET /api/v1/admin/me", adminAuth(adminHandler.HandleGetMe))
+	mux.HandleFunc("GET /api/v1/admin/dashboard", adminAuth(adminHandler.HandleDashboard))
+
+	// Admin management (requires admin:write permission)
+	mux.HandleFunc("GET /api/v1/admin/admins", adminAuth(adminHandler.HandleListAdmins))
+	mux.HandleFunc("POST /api/v1/admin/admins", adminAuth(adminHandler.HandleCreateAdmin))
+	mux.HandleFunc("GET /api/v1/admin/admins/", adminAuth(adminHandler.HandleGetAdmin))
+	mux.HandleFunc("PUT /api/v1/admin/admins/", adminAuth(adminHandler.HandleUpdateAdmin))
+	mux.HandleFunc("DELETE /api/v1/admin/admins/", adminAuth(adminHandler.HandleDeleteAdmin))
+
+	// User management (requires users:read/write permission)
+	mux.HandleFunc("GET /api/v1/admin/users", adminAuth(adminHandler.HandleListUsers))
+	mux.HandleFunc("GET /api/v1/admin/users/", adminAuth(adminHandler.HandleGetUser))
+	mux.HandleFunc("PUT /api/v1/admin/users/", adminAuth(adminHandler.HandleUpdateUser))
+	mux.HandleFunc("DELETE /api/v1/admin/users/", adminAuth(adminHandler.HandleDeleteUser))
+
+	// Booking management (requires bookings:read/write permission)
+	mux.HandleFunc("GET /api/v1/admin/bookings", adminAuth(adminHandler.HandleListBookings))
+	mux.HandleFunc("GET /api/v1/admin/bookings/", adminAuth(adminHandler.HandleGetBooking))
+	mux.HandleFunc("PUT /api/v1/admin/bookings/", adminAuth(adminHandler.HandleUpdateBooking))
+	mux.HandleFunc("GET /api/v1/admin/bookings/stats", adminAuth(adminHandler.HandleBookingStats))
+
+	// Provider management (requires providers:read/write permission)
+	mux.HandleFunc("GET /api/v1/admin/providers", adminAuth(adminHandler.HandleListProviders))
+	mux.HandleFunc("GET /api/v1/admin/providers/", adminAuth(adminHandler.HandleGetProvider))
+	mux.HandleFunc("PUT /api/v1/admin/providers/", adminAuth(adminHandler.HandleUpdateProvider))
+
+	// Analytics (requires analytics:read permission)
+	mux.HandleFunc("GET /api/v1/admin/analytics/revenue", adminAuth(adminHandler.HandleRevenueStats))
+	mux.HandleFunc("GET /api/v1/admin/analytics/users", adminAuth(adminHandler.HandleUserStats))
+	mux.HandleFunc("GET /api/v1/admin/analytics/providers", adminAuth(adminHandler.HandleProviderStats))
+
+	// Audit logs
+	mux.HandleFunc("GET /api/v1/admin/audit-logs", adminAuth(adminHandler.HandleAuditLogs))
 
 	logger.Info("✅ Routes registered")
 

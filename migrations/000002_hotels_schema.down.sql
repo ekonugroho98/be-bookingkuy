@@ -1,0 +1,20 @@
+-- Rollback hotels schema
+DROP TRIGGER IF EXISTS update_bookings_updated_at ON bookings;
+DROP TRIGGER IF EXISTS update_rooms_updated_at ON rooms;
+DROP TRIGGER IF EXISTS update_hotels_updated_at ON hotels;
+DROP INDEX IF EXISTS idx_bookings_deleted_at;
+DROP INDEX IF EXISTS idx_bookings_created_at;
+DROP INDEX IF EXISTS idx_bookings_check_in;
+DROP INDEX IF EXISTS idx_bookings_status;
+DROP INDEX IF EXISTS idx_bookings_hotel_id;
+DROP INDEX IF EXISTS idx_bookings_user_id;
+DROP INDEX IF EXISTS idx_rooms_deleted_at;
+DROP INDEX IF EXISTS idx_rooms_provider_room_code;
+DROP INDEX IF EXISTS idx_rooms_hotel_id;
+DROP INDEX IF EXISTS idx_hotels_deleted_at;
+DROP INDEX IF EXISTS idx_hotels_country_code;
+DROP INDEX IF EXISTS idx_hotels_city;
+DROP INDEX IF EXISTS idx_hotels_provider_hotel_id;
+DROP TABLE IF EXISTS bookings;
+DROP TABLE IF EXISTS rooms;
+DROP TABLE IF EXISTS hotels;

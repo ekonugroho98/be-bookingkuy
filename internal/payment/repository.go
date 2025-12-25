@@ -13,6 +13,7 @@ type Repository interface {
 	Create(ctx context.Context, payment *Payment) error
 	GetByID(ctx context.Context, id string) (*Payment, error)
 	GetByBookingID(ctx context.Context, bookingID string) (*Payment, error)
+	GetByProviderRef(ctx context.Context, providerRef string) (*Payment, error)
 	UpdateStatus(ctx context.Context, id string, status PaymentStatus, providerRef string) error
 }
 
@@ -110,4 +111,31 @@ func (r *repository) UpdateStatus(ctx context.Context, id string, status Payment
 	}
 
 	return nil
+}
+
+func (r *repository) GetByProviderRef(ctx context.Context, providerRef string) (*Payment, error) {
+	query := `
+		SELECT id, booking_id, provider, method, amount, currency, status, provider_reference, created_at
+		FROM payments
+		WHERE provider_reference = $1
+		ORDER BY created_at DESC
+		LIMIT 1
+	`
+
+	row := r.db.Pool.QueryRow(ctx, query, providerRef)
+
+	var payment Payment
+	err := row.Scan(
+		&payment.ID, &payment.BookingID, &payment.Provider, &payment.Method,
+		&payment.Amount, &payment.Currency, &payment.Status, &payment.ProviderRef, &payment.CreatedAt,
+	)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, fmt.Errorf("payment not found")
+		}
+		return nil, fmt.Errorf("failed to get payment by provider ref: %w", err)
+	}
+
+	return &payment, nil
 }

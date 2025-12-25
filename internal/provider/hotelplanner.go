@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ekonugroho98/be-bookingkuy/internal/provider/types"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/logger"
 )
 
@@ -34,30 +35,30 @@ func (h *HotelPlannerProvider) Name() string {
 }
 
 // SearchAvailability searches for available hotels on HotelPlanner
-func (h *HotelPlannerProvider) SearchAvailability(ctx context.Context, req *AvailabilityRequest) (*AvailabilityResponse, error) {
+func (h *HotelPlannerProvider) SearchAvailability(ctx context.Context, req *types.AvailabilityRequest) (*types.AvailabilityResponse, error) {
 	logger.Infof("Searching HotelPlanner availability for %s", req.City)
 
 	// TODO: Implement actual HotelPlanner API call
 	// Format response ke canonical models
-	mockResponse := &AvailabilityResponse{
-		Hotels: []HotelAvailability{
+	mockResponse := &types.AvailabilityResponse{
+		Hotels: []types.HotelAvailability{
 			{
-				Hotel: Hotel{
+				Hotel: types.Hotel{
 					ID:          "HP-98765",
 					Name:        "Planner Hotel (HotelPlanner)",
 					CountryCode: "ID",
 					City:        req.City,
 					Rating:      4.0,
 				},
-				Rooms: []RoomRate{
+				Rooms: []types.RoomRate{
 					{
-						Room: Room{
+						Room: types.Room{
 							ID:       "HP-ROOM-1",
 							HotelID:  "HP-98765",
 							Name:     "Standard Room",
 							Capacity: 2,
 						},
-						Rates: []Rate{
+						Rates: []types.Rate{
 							{
 								RoomID:    "HP-ROOM-1",
 								NetPrice:  1200000,
@@ -75,10 +76,10 @@ func (h *HotelPlannerProvider) SearchAvailability(ctx context.Context, req *Avai
 }
 
 // GetHotelDetails retrieves hotel details from HotelPlanner
-func (h *HotelPlannerProvider) GetHotelDetails(ctx context.Context, hotelID string) (*Hotel, error) {
+func (h *HotelPlannerProvider) GetHotelDetails(ctx context.Context, hotelID string) (*types.Hotel, error) {
 	logger.Infof("Getting HotelPlanner hotel details: %s", hotelID)
 	// TODO: Implement actual HotelPlanner API call
-	return &Hotel{
+	return &types.Hotel{
 		ID:     hotelID,
 		Name:   "Sample Hotel from HotelPlanner",
 		City:   "Bali",
@@ -87,10 +88,10 @@ func (h *HotelPlannerProvider) GetHotelDetails(ctx context.Context, hotelID stri
 }
 
 // CreateBooking creates a booking on HotelPlanner
-func (h *HotelPlannerProvider) CreateBooking(ctx context.Context, req *BookingRequest) (*BookingConfirmation, error) {
+func (h *HotelPlannerProvider) CreateBooking(ctx context.Context, req *types.BookingRequest) (*types.BookingConfirmation, error) {
 	logger.Infof("Creating booking on HotelPlanner for hotel %s", req.HotelID)
 	// TODO: Implement actual HotelPlanner booking API call
-	confirmation := &BookingConfirmation{
+	confirmation := &types.BookingConfirmation{
 		BookingID:         fmt.Sprintf("HP-%d", time.Now().Unix()),
 		ProviderReference: fmt.Sprintf("HPL-%d", time.Now().Unix()),
 		Status:            "CONFIRMED",
