@@ -2,7 +2,6 @@ package booking
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -39,11 +38,28 @@ func (h *Handler) CreateBooking(w http.ResponseWriter, r *http.Request) {
 	booking, err := h.service.CreateBooking(r.Context(), userID, &req)
 	if err != nil {
 		logger.ErrorWithErr(err, "Failed to create booking")
-		respondWithError(w, http.StatusInternalServerError, "Failed to create booking")
+		// Return proper HTTP status based on error type
+		switch err {
+		case ErrInvalidCheckOut, ErrInvalidCheckIn, ErrInvalidGuests:
+			respondWithError(w, http.StatusBadRequest, err.Error())
+		case ErrRoomNotAvailable:
+			respondWithError(w, http.StatusConflict, err.Error())
+		default:
+			respondWithError(w, http.StatusInternalServerError, "Failed to create booking")
+		}
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, booking)
+	// Return FE-compatible response with details
+	bookingWithDetails, err := h.service.GetBookingWithDetails(r.Context(), booking.ID)
+	if err != nil {
+		logger.ErrorWithErr(err, "Failed to get booking details")
+		// Fallback to raw booking response
+		respondWithJSON(w, http.StatusCreated, booking)
+		return
+	}
+
+	respondWithJSON(w, http.StatusCreated, bookingWithDetails)
 }
 
 // GetBooking handles GET /bookings/{id}
@@ -54,10 +70,11 @@ func (h *Handler) GetBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	booking, err := h.service.GetBooking(r.Context(), bookingID)
+	// Return FE-compatible response with details
+	booking, err := h.service.GetBookingWithDetails(r.Context(), bookingID)
 	if err != nil {
 		logger.ErrorWithErr(err, "Failed to get booking")
-		if errors.Is(err, errors.New("booking not found")) {
+		if err == ErrBookingNotFound {
 			respondWithError(w, http.StatusNotFound, "Booking not found")
 		} else {
 			respondWithError(w, http.StatusInternalServerError, "Internal server error")
@@ -92,7 +109,8 @@ func (h *Handler) GetMyBookings(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	bookings, err := h.service.GetUserBookings(r.Context(), userID, page, perPage)
+	// Return FE-compatible response with details
+	bookings, err := h.service.GetUserBookingsWithDetails(r.Context(), userID, page, perPage)
 	if err != nil {
 		logger.ErrorWithErr(err, "Failed to get user bookings")
 		respondWithError(w, http.StatusInternalServerError, "Internal server error")
@@ -125,6 +143,38 @@ func (h *Handler) CancelBooking(w http.ResponseWriter, r *http.Request) {
 		"message": "Booking cancelled successfully",
 		"booking": booking,
 	})
+}
+
+// UpdateBooking handles PUT /bookings/{id}
+func (h *Handler) UpdateBooking(w http.ResponseWriter, r *http.Request) {
+	bookingID := r.PathValue("id")
+	if bookingID == "" {
+		respondWithError(w, http.StatusBadRequest, "Booking ID is required")
+		return
+	}
+
+	var req UpdateBookingRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	booking, err := h.service.UpdateBooking(r.Context(), bookingID, &req)
+	if err != nil {
+		logger.ErrorWithErr(err, "Failed to update booking")
+		// Return proper HTTP status based on error type
+		switch err {
+		case ErrBookingNotFound:
+			respondWithError(w, http.StatusNotFound, err.Error())
+		case ErrInvalidStatus, ErrInvalidPaymentType:
+			respondWithError(w, http.StatusBadRequest, err.Error())
+		default:
+			respondWithError(w, http.StatusInternalServerError, "Failed to update booking")
+		}
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, booking)
 }
 
 func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {

@@ -83,19 +83,25 @@ func Load() (*Config, error) {
 	// Set defaults
 	setDefaults()
 
-	// Read from .env file if exists
-	viper.SetConfigFile(".env")
-	viper.SetConfigType("env")
-	if err := viper.ReadInConfig(); err != nil {
-		// .env file is optional
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return nil, fmt.Errorf("error reading config file: %w", err)
-		}
-	}
-
 	cfg := &Config{}
 
-	// Bind environment variables
+	// Bind environment variables explicitly to ensure mapping works
+	viper.BindEnv("jwt.secret", "BOOKINGKUY_JWT_SECRET")
+	viper.BindEnv("jwt.expiration", "BOOKINGKUY_JWT_EXPIRATION")
+	viper.BindEnv("database.host", "BOOKINGKUY_DATABASE_HOST")
+	viper.BindEnv("database.port", "BOOKINGKUY_DATABASE_PORT")
+	viper.BindEnv("database.name", "BOOKINGKUY_DATABASE_NAME")
+	viper.BindEnv("database.user", "BOOKINGKUY_DATABASE_USER")
+	viper.BindEnv("database.password", "BOOKINGKUY_DATABASE_PASSWORD")
+	viper.BindEnv("database.sslmode", "BOOKINGKUY_DATABASE_SSLMODE")
+	viper.BindEnv("server.host", "BOOKINGKUY_SERVER_HOST")
+	viper.BindEnv("server.port", "BOOKINGKUY_SERVER_PORT")
+	viper.BindEnv("redis.host", "BOOKINGKUY_REDIS_HOST")
+	viper.BindEnv("redis.port", "BOOKINGKUY_REDIS_PORT")
+	viper.BindEnv("redis.password", "BOOKINGKUY_REDIS_PASSWORD")
+	viper.BindEnv("redis.db", "BOOKINGKUY_REDIS_DB")
+	viper.BindEnv("environment", "BOOKINGKUY_ENVIRONMENT")
+
 	if err := viper.Unmarshal(cfg); err != nil {
 		return nil, fmt.Errorf("error unmarshaling config: %w", err)
 	}

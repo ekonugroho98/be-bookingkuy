@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/logger"
@@ -31,7 +30,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	user, err := h.service.Register(r.Context(), &req)
 	if err != nil {
 		logger.ErrorWithErr(err, "Failed to register user")
-		if errors.Is(err, errors.New("email already registered")) {
+		if err == ErrUserExists {
 			respondWithError(w, http.StatusConflict, "Email already registered")
 		} else {
 			respondWithError(w, http.StatusInternalServerError, "Internal server error")
@@ -56,7 +55,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	response, err := h.service.Login(r.Context(), &req)
 	if err != nil {
 		logger.ErrorWithErr(err, "Failed to login user")
-		if errors.Is(err, errors.New("invalid email or password")) {
+		if err == ErrInvalidCredentials {
 			respondWithError(w, http.StatusUnauthorized, "Invalid email or password")
 		} else {
 			respondWithError(w, http.StatusInternalServerError, "Internal server error")

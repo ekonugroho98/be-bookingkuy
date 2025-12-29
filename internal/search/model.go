@@ -32,9 +32,9 @@ type SearchOptions struct {
 type Hotel struct {
 	ID          string   `json:"id" db:"id"`
 	Name        string   `json:"name" db:"name"`
-	Country     string   `json:"country" db:"country"`
+	CountryCode string   `json:"country_code" db:"country_code"`
 	City        string   `json:"city" db:"city"`
-	Rating      *float64 `json:"rating" db:"rating"`
+	Rating      *float64 `json:"rating" db:"overall_rating"`
 	MinPrice    *int     `json:"min_price,omitempty"`
 	MaxPrice    *int     `json:"max_price,omitempty"`
 	Description string   `json:"description,omitempty"`
@@ -47,4 +47,42 @@ type SearchResult struct {
 	Page       int     `json:"page"`
 	PerPage    int     `json:"per_page"`
 	TotalPages int     `json:"total_pages"`
+}
+
+// AutocompleteRequest represents autocomplete search request
+type AutocompleteRequest struct {
+	Query string `json:"query" validate:"required,min=2"`
+	Limit int    `json:"limit" validate:"omitempty,min=1,max=20"`
+}
+
+// AutocompleteResultType represents the type of autocomplete result
+type AutocompleteResultType string
+
+const (
+	AutocompleteTypeRegion AutocompleteResultType = "region" // Country/State level
+	AutocompleteTypeCity   AutocompleteResultType = "city"   // City level
+	AutocompleteTypeHotel  AutocompleteResultType = "hotel"  // Specific hotel
+)
+
+// AutocompleteResult represents autocomplete result
+type AutocompleteResult struct {
+	Type        AutocompleteResultType `json:"type"`         // region, city, hotel
+	ID          string                 `json:"id"`           // For region/city: code, for hotel: hotel_id
+	Name        string                 `json:"name"`         // Display name
+	FullName    string                 `json:"full_name"`    // Full name with location
+	City        string                 `json:"city,omitempty"`      // City name (for hotels)
+	CountryCode string                 `json:"country_code,omitempty"` // Country code (e.g., "ID")
+	CountryName string                 `json:"country_name,omitempty"` // Country name (e.g., "Indonesia")
+	Region      string                 `json:"region,omitempty"`      // State/Province (optional)
+}
+
+// AutocompleteResponse represents autocomplete response
+type AutocompleteResponse struct {
+	Query   string                `json:"query"`
+	Results []AutocompleteResult  `json:"results"`
+}
+
+// AutocompleteOptions represents autocomplete options
+type AutocompleteOptions struct {
+	Limit int
 }

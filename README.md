@@ -2,6 +2,63 @@
 
 Backend untuk Bookingkuy Global OTA dibangun dengan Go menggunakan arsitektur Modular Monolith.
 
+## Quick Start
+
+### Prerequisites
+- Go 1.25+
+- Docker & Docker Compose
+- PostgreSQL 15
+- Redis 7
+
+### Setup
+
+1. **Clone repository**
+   ```bash
+   git clone https://github.com/ekonugroho98/be-bookingkuy.git
+   cd be-bookingkuy
+   ```
+
+2. **Configure environment variables**
+   ```bash
+   # Copy example environment file
+   cp .env.example .env
+
+   # Edit .env with your configuration
+   nano .env
+   ```
+
+   Required variables:
+   - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
+   - `JWT_SECRET` (change in production!)
+   - `HOTELBEDS_API_KEY`, `HOTELBEDS_SECRET`
+   - `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`
+
+3. **Start services with Docker**
+   ```bash
+   docker-compose up -d
+   ```
+
+   This starts:
+   - PostgreSQL on port 5432
+   - Redis on port 6379
+
+4. **Run database migrations**
+   ```bash
+   go run cmd/migrate/main.go
+   ```
+
+5. **Start the API server**
+   ```bash
+   go run cmd/api/main.go
+   ```
+
+   API will be available at `http://localhost:8080`
+
+6. **Verify health**
+   ```bash
+   curl http://localhost:8080/health
+   ```
+
 ## Tech Stack
 
 - **Language:** Go 1.25+

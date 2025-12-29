@@ -2,7 +2,6 @@ package user
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/logger"
@@ -33,7 +32,7 @@ func (h *Handler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	user, err := h.service.GetProfile(r.Context(), userID)
 	if err != nil {
 		logger.ErrorWithErr(err, "Failed to get user profile")
-		if errors.Is(err, ErrUserNotFound) {
+		if err == ErrUserNotFound {
 			respondWithError(w, http.StatusNotFound, "User not found")
 		} else {
 			respondWithError(w, http.StatusInternalServerError, "Internal server error")
@@ -82,8 +81,3 @@ func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {
 func respondWithError(w http.ResponseWriter, status int, message string) {
 	respondWithJSON(w, status, map[string]string{"error": message})
 }
-
-// Error definitions
-var (
-	ErrUserNotFound = errors.New("user not found")
-)

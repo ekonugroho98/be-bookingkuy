@@ -9,14 +9,20 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/ekonugroho98/be-bookingkuy/cmd/api/docs" // Swagger docs
 	"github.com/ekonugroho98/be-bookingkuy/internal/admin"
 	"github.com/ekonugroho98/be-bookingkuy/internal/auth"
 	"github.com/ekonugroho98/be-bookingkuy/internal/booking"
+	"github.com/ekonugroho98/be-bookingkuy/internal/destinations"
+	"github.com/ekonugroho98/be-bookingkuy/internal/hotel"
+	"github.com/ekonugroho98/be-bookingkuy/internal/hotelbeds"
 	"github.com/ekonugroho98/be-bookingkuy/internal/midtrans"
+	"github.com/ekonugroho98/be-bookingkuy/internal/notification"
 	"github.com/ekonugroho98/be-bookingkuy/internal/payment"
 	"github.com/ekonugroho98/be-bookingkuy/internal/pricing"
 	"github.com/ekonugroho98/be-bookingkuy/internal/review"
 	"github.com/ekonugroho98/be-bookingkuy/internal/search"
+	"github.com/ekonugroho98/be-bookingkuy/internal/sendgrid"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/config"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/db"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/eventbus"
@@ -26,6 +32,8 @@ import (
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/middleware"
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/server"
 	"github.com/ekonugroho98/be-bookingkuy/internal/user"
+
+	httpSwagger "github.com/swaggo/http-swagger" // swagger middleware
 )
 
 func main() {
@@ -87,6 +95,36 @@ func main() {
 	})
 	logger.Info("✅ Midtrans client initialized")
 
+	// Initialize HotelBeds client
+	hotelbedsClient := hotelbeds.NewClient(
+		cfg.Hotelbeds.APIKey,
+		cfg.Hotelbeds.Secret,
+		cfg.Hotelbeds.BaseURL,
+	)
+	logger.Info("✅ HotelBeds client initialized")
+
+	// Initialize SendGrid client
+	sendgridClient := sendgrid.NewClient(sendgrid.Config{
+		APIKey:    cfg.SendGrid.APIKey,
+		FromEmail: cfg.SendGrid.FromEmail,
+		FromName:  "Bookingkuy", // Default from name
+		Timeout:   30 * time.Second,
+	})
+	logger.Info("✅ SendGrid client initialized")
+
+	// Initialize notification service
+	emailService := notification.NewEmailService(
+		sendgridClient,
+		cfg.SendGrid.FromEmail,
+		"Bookingkuy",
+	)
+	notificationService := notification.NewService(emailService, nil) // SMS service nil for now
+	logger.Info("✅ Notification service initialized")
+
+	// Register notification service with booking package
+	booking.SetNotificationService(notificationService)
+	logger.Info("✅ Notification service registered for booking events")
+
 	// Initialize repositories
 	userRepo := user.NewRepository(database)
 	authRepo := auth.NewRepository(database)
@@ -96,7 +134,7 @@ func main() {
 	authService := auth.NewService(userRepo, authRepo, eb, jwtManager)
 	searchService := search.NewService(search.NewRepository(database))
 	pricingService := pricing.NewService()
-	bookingService := booking.NewService(booking.NewRepository(database), eb, pricingService)
+	bookingService := booking.NewService(booking.NewRepository(database), eb, pricingService, hotelbedsClient)
 	paymentService := payment.NewServiceWithMidtrans(payment.NewRepository(database), eb, midtransClient)
 
 	// Initialize admin service
@@ -108,6 +146,14 @@ func main() {
 	reviewRepo := review.NewRepository(database.Pool)
 	reviewService := review.NewService(reviewRepo)
 	reviewHandler := review.NewHandler(reviewService, cfg.JWT.Secret)
+
+	// Initialize hotel service
+	hotelRepo := hotel.NewRepository(database.Pool)
+	hotelService := hotel.NewService(hotelRepo, hotelbedsClient)
+	hotelHandler := hotel.NewHandler(hotelService)
+
+	// Initialize destinations handler
+	destinationsHandler := destinations.NewHandler(database.Pool)
 
 	// Initialize handlers
 	userHandler := user.NewHandler(userService)
@@ -125,17 +171,31 @@ func main() {
 	mux.HandleFunc("/health/ready", healthHandler.Ready)
 	mux.HandleFunc("/health/live", healthHandler.Live)
 
+	// Swagger documentation
+	mux.HandleFunc("/swagger/*", httpSwagger.WrapHandler)
+
 	// Auth endpoints (public)
 	mux.HandleFunc("POST /api/v1/auth/register", authHandler.Register)
 	mux.HandleFunc("POST /api/v1/auth/login", authHandler.Login)
 
 	// Search endpoints (public)
 	mux.HandleFunc("POST /api/v1/search/hotels", searchHandler.SearchHotels)
+	mux.HandleFunc("GET /api/v1/search/autocomplete", searchHandler.Autocomplete)
+	mux.HandleFunc("GET /api/v1/search/destinations", searchHandler.GetPopularDestinations)
+
+	// Destinations endpoints (public)
+	mux.HandleFunc("GET /api/v1/destinations/autocomplete", destinationsHandler.Autocomplete)
+
+	// Hotel endpoints (public)
+	mux.HandleFunc("GET /api/v1/hotels/{id}", hotelHandler.GetHotel)
+	mux.HandleFunc("GET /api/v1/hotels/{id}/rooms", hotelHandler.GetAvailableRooms)
+	mux.HandleFunc("GET /api/v1/hotels/{id}/images", hotelHandler.GetImages)
 
 	// Booking endpoints (protected)
 	mux.HandleFunc("POST /api/v1/bookings", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(bookingHandler.CreateBooking)).ServeHTTP)
 	mux.HandleFunc("GET /api/v1/bookings/{id}", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(bookingHandler.GetBooking)).ServeHTTP)
 	mux.HandleFunc("GET /api/v1/bookings/my", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(bookingHandler.GetMyBookings)).ServeHTTP)
+	mux.HandleFunc("PUT /api/v1/bookings/{id}", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(bookingHandler.UpdateBooking)).ServeHTTP)
 	mux.HandleFunc("POST /api/v1/bookings/{id}/cancel", middleware.AuthMiddleware(jwtManager)(http.HandlerFunc(bookingHandler.CancelBooking)).ServeHTTP)
 
 	// Payment endpoints (protected + webhook)
@@ -149,14 +209,14 @@ func main() {
 
 	// Review endpoints (public + protected)
 	mux.HandleFunc("GET /api/v1/reviews/hotel/", reviewHandler.GetHotelReviews)
-	mux.HandleFunc("GET /api/v1/reviews/hotel/", reviewHandler.GetHotelStats)
+	mux.HandleFunc("GET /api/v1/reviews/hotel/{id}/stats", reviewHandler.GetHotelStats)
 	mux.HandleFunc("GET /api/v1/reviews/", reviewHandler.GetReviewByID)
 	mux.HandleFunc("POST /api/v1/reviews", reviewHandler.CreateReview)
 	mux.HandleFunc("PUT /api/v1/reviews/", reviewHandler.UpdateReview)
 	mux.HandleFunc("DELETE /api/v1/reviews/", reviewHandler.DeleteReview)
 	mux.HandleFunc("GET /api/v1/reviews/my-reviews", reviewHandler.GetMyReviews)
-	mux.HandleFunc("POST /api/v1/reviews/", reviewHandler.ToggleHelpful)
-	mux.HandleFunc("POST /api/v1/reviews/", reviewHandler.FlagReview)
+	mux.HandleFunc("POST /api/v1/reviews/{id}/helpful", reviewHandler.ToggleHelpful)
+	mux.HandleFunc("POST /api/v1/reviews/{id}/flag", reviewHandler.FlagReview)
 
 	// Hotel partner endpoints (review responses)
 	mux.HandleFunc("POST /api/v1/hotels/", reviewHandler.AddHotelResponse)

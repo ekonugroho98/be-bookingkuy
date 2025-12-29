@@ -71,7 +71,7 @@ func (r *repository) GetByID(ctx context.Context, id string) (*Booking, error) {
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("booking not found")
+			return nil, ErrBookingNotFound
 		}
 		return nil, fmt.Errorf("failed to get booking: %w", err)
 	}

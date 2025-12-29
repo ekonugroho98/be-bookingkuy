@@ -2,7 +2,6 @@ package payment
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/logger"
@@ -44,7 +43,7 @@ func (h *Handler) CreatePayment(w http.ResponseWriter, r *http.Request) {
 	payment, err := h.service.CreatePayment(r.Context(), &req, amount)
 	if err != nil {
 		logger.ErrorWithErr(err, "Failed to create payment")
-		if errors.Is(err, errors.New("payment already completed for this booking")) {
+		if err == ErrInvalidPayment {
 			respondWithError(w, http.StatusConflict, err.Error())
 		} else {
 			respondWithError(w, http.StatusInternalServerError, "Failed to create payment")
@@ -83,7 +82,7 @@ func (h *Handler) GetPayment(w http.ResponseWriter, r *http.Request) {
 	payment, err := h.service.GetPayment(r.Context(), paymentID)
 	if err != nil {
 		logger.ErrorWithErr(err, "Failed to get payment")
-		if errors.Is(err, errors.New("payment not found")) {
+		if err == ErrPaymentNotFound {
 			respondWithError(w, http.StatusNotFound, "Payment not found")
 		} else {
 			respondWithError(w, http.StatusInternalServerError, "Internal server error")

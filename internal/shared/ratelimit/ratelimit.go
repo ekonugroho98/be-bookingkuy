@@ -1,7 +1,6 @@
 package ratelimit
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"sync"
@@ -18,7 +17,7 @@ type RateLimiter struct {
 
 // clientBucket tracks rate limit for a client
 type clientBucket struct {
-	tokens  int
+	tokens     int
 	lastRefill time.Time
 }
 

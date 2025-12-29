@@ -2,7 +2,6 @@ package search
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/ekonugroho98/be-bookingkuy/internal/shared/logger"
@@ -53,7 +52,7 @@ func (h *Handler) SearchHotels(w http.ResponseWriter, r *http.Request) {
 	result, err := h.service.SearchHotels(r.Context(), &req, opts)
 	if err != nil {
 		logger.ErrorWithErr(err, "Failed to search hotels")
-		if errors.Is(err, errors.New("check-out date must be after check-in date")) {
+		if err == ErrInvalidDates {
 			respondWithError(w, http.StatusBadRequest, err.Error())
 		} else {
 			respondWithError(w, http.StatusInternalServerError, "Internal server error")
@@ -62,6 +61,54 @@ func (h *Handler) SearchHotels(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusOK, result)
+}
+
+// Autocomplete handles GET /search/autocomplete
+func (h *Handler) Autocomplete(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("q")
+	if query == "" {
+		respondWithError(w, http.StatusBadRequest, "Query parameter 'q' is required")
+		return
+	}
+
+	// Parse limit from query params (default 10, max 20)
+	limit := 10
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if l, err := parseQueryParamInt(limitStr); err == nil && l > 0 && l <= 20 {
+			limit = l
+		}
+	}
+
+	result, err := h.service.Autocomplete(r.Context(), query, limit)
+	if err != nil {
+		logger.ErrorWithErr(err, "Failed to get autocomplete results")
+		respondWithError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, result)
+}
+
+// GetPopularDestinations handles GET /search/destinations
+func (h *Handler) GetPopularDestinations(w http.ResponseWriter, r *http.Request) {
+	// Parse limit from query params (default 10, max 20)
+	limit := 10
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if l, err := parseQueryParamInt(limitStr); err == nil && l > 0 && l <= 20 {
+			limit = l
+		}
+	}
+
+	results, err := h.service.GetPopularDestinations(r.Context(), limit)
+	if err != nil {
+		logger.ErrorWithErr(err, "Failed to get popular destinations")
+		respondWithError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, map[string]interface{}{
+		"destinations": results,
+	})
 }
 
 func parseQueryParamInt(s string) (int, error) {

@@ -45,7 +45,7 @@ func (s *Service) SendBookingConfirmation(ctx context.Context, email, name strin
 		if err := s.queueClient.Publish(ctx, queue.QueueEmail, message); err != nil {
 			logger.ErrorWithErr(err, "Failed to publish email to queue, sending synchronously")
 			// Fallback to synchronous sending
-			return s.emailService.SendEmail(ctx, email, "Booking Confirmation", bookingDetails)
+			return s.emailService.SendBookingConfirmationEmail(ctx, email, name, bookingDetails)
 		}
 
 		logger.Infof("Booking confirmation queued for %s", email)
@@ -53,7 +53,7 @@ func (s *Service) SendBookingConfirmation(ctx context.Context, email, name strin
 	}
 
 	// Synchronous fallback
-	return s.emailService.SendEmail(ctx, email, "Booking Confirmation", bookingDetails)
+	return s.emailService.SendBookingConfirmationEmail(ctx, email, name, bookingDetails)
 }
 
 // SendPaymentConfirmation sends payment confirmation email
@@ -73,14 +73,14 @@ func (s *Service) SendPaymentConfirmation(ctx context.Context, email, name strin
 
 		if err := s.queueClient.Publish(ctx, queue.QueueEmail, message); err != nil {
 			logger.ErrorWithErr(err, "Failed to publish email to queue, sending synchronously")
-			return s.emailService.SendEmail(ctx, email, "Payment Confirmation", paymentDetails)
+			return s.emailService.SendPaymentConfirmationEmail(ctx, email, name, paymentDetails)
 		}
 
 		logger.Infof("Payment confirmation queued for %s", email)
 		return nil
 	}
 
-	return s.emailService.SendEmail(ctx, email, "Payment Confirmation", paymentDetails)
+	return s.emailService.SendPaymentConfirmationEmail(ctx, email, name, paymentDetails)
 }
 
 // SendBookingCancelled sends booking cancellation email

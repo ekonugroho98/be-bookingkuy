@@ -1,0 +1,914 @@
+definitions:
+  main.AuthResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        $ref: '#/definitions/main.UserDetail'
+    type: object
+  main.AvailableRoom:
+    properties:
+      available:
+        example: true
+        type: boolean
+      beds:
+        example: 1 King Bed
+        type: string
+      currency:
+        example: IDR
+        type: string
+      max_guests:
+        example: 2
+        type: integer
+      price:
+        example: 150000
+        type: integer
+      room_id:
+        example: room-001
+        type: string
+      room_name:
+        example: Deluxe Ocean View
+        type: string
+    type: object
+  main.BookingResponse:
+    properties:
+      booking_reference:
+        example: BK20250115001
+        type: string
+      checkIn:
+        example: Jan 15, 2025
+        type: string
+      checkOut:
+        example: Jan 17, 2025
+        type: string
+      city:
+        example: Bali
+        type: string
+      created_at:
+        example: "2025-01-10T10:30:00Z"
+        type: string
+      currency:
+        example: IDR
+        type: string
+      guests:
+        example: 2
+        type: integer
+      guestsFormatted:
+        example: 2 Adults
+        type: string
+      hotel_id:
+        example: 60cb194d-4cf3-4429-a4a3-9dbdd09cbcfe
+        type: string
+      hotelImage:
+        example: https://example.com/hotel.jpg
+        type: string
+      hotelName:
+        example: Bali Paradise Hotel
+        type: string
+      id:
+        example: bk-001
+        type: string
+      payment_type:
+        example: PAY_NOW
+        type: string
+      room_id:
+        example: room-001
+        type: string
+      roomName:
+        example: Deluxe Ocean View
+        type: string
+      status:
+        example: Confirmed
+        type: string
+      total_amount:
+        example: 300000
+        type: integer
+      totalPrice:
+        example: 300000
+        type: integer
+      user_id:
+        example: user-001
+        type: string
+    type: object
+  main.CreateBookingRequest:
+    properties:
+      check_in:
+        example: "2025-01-15T00:00:00Z"
+        type: string
+      check_out:
+        example: "2025-01-17T00:00:00Z"
+        type: string
+      guests:
+        example: 2
+        maximum: 10
+        minimum: 1
+        type: integer
+      hotel_id:
+        example: 60cb194d-4cf3-4429-a4a3-9dbdd09cbcfe
+        type: string
+      payment_type:
+        enum:
+        - PAY_NOW
+        - PAY_AT_HOTEL
+        example: PAY_NOW
+        type: string
+      room_id:
+        example: room-001
+        type: string
+    required:
+    - check_in
+    - check_out
+    - guests
+    - hotel_id
+    - payment_type
+    - room_id
+    type: object
+  main.CreatePaymentRequest:
+    properties:
+      amount:
+        example: 300000
+        type: integer
+      booking_id:
+        example: bk-001
+        type: string
+    required:
+    - amount
+    - booking_id
+    type: object
+  main.ErrorResponse:
+    properties:
+      error:
+        example: Invalid email or password
+        type: string
+    type: object
+  main.HealthResponse:
+    properties:
+      status:
+        example: healthy
+        type: string
+      timestamp:
+        example: "2025-01-10T10:30:00Z"
+        type: string
+    type: object
+  main.HotelDetailsResponse:
+    properties:
+      address:
+        example: Jalan Beach 123
+        type: string
+      amenities:
+        example:
+        - WiFi
+        - Pool
+        - Spa
+        items:
+          type: string
+        type: array
+      category:
+        example: 4 Star
+        type: string
+      city:
+        example: Bali
+        type: string
+      country_code:
+        example: ID
+        type: string
+      description:
+        example: Luxurious beachfront resort
+        type: string
+      id:
+        example: 60cb194d-4cf3-4429-a4a3-9dbdd09cbcfe
+        type: string
+      images:
+        items:
+          $ref: '#/definitions/main.Image'
+        type: array
+      location:
+        $ref: '#/definitions/main.Location'
+      name:
+        example: Bali Paradise Hotel
+        type: string
+      policies:
+        $ref: '#/definitions/main.Policies'
+      rating:
+        example: 4.5
+        type: number
+      rooms:
+        items:
+          $ref: '#/definitions/main.RoomInfo'
+        type: array
+    type: object
+  main.Image:
+    properties:
+      caption:
+        example: Hotel exterior view
+        type: string
+      hotel_id:
+        example: 60cb194d-4cf3-4429-a4a3-9dbdd09cbcfe
+        type: string
+      id:
+        example: img-001
+        type: string
+      sort_order:
+        example: 1
+        type: integer
+      type:
+        example: exterior
+        type: string
+      url:
+        example: https://example.com/image.jpg
+        type: string
+    type: object
+  main.Location:
+    properties:
+      latitude:
+        example: -8.409518
+        type: number
+      longitude:
+        example: 115.188919
+        type: number
+    type: object
+  main.LoginRequest:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  main.MyBookingsResponse:
+    properties:
+      bookings:
+        items:
+          $ref: '#/definitions/main.BookingResponse'
+        type: array
+      page:
+        example: 1
+        type: integer
+      per_page:
+        example: 20
+        type: integer
+    type: object
+  main.PaymentResponse:
+    properties:
+      amount:
+        example: 300000
+        type: integer
+      booking_id:
+        example: bk-001
+        type: string
+      created_at:
+        example: "2025-01-10T10:30:00Z"
+        type: string
+      currency:
+        example: IDR
+        type: string
+      id:
+        example: pay-001
+        type: string
+      midtrans_tx_id:
+        example: midtrans-001
+        type: string
+      payment_type:
+        example: MIDTRANS
+        type: string
+      payment_url:
+        example: https://app.midtrans.com/payment-link/xxx
+        type: string
+      status:
+        example: Pending
+        type: string
+      updated_at:
+        example: "2025-01-10T10:35:00Z"
+        type: string
+    type: object
+  main.Policies:
+    properties:
+      cancellation:
+        example: Free cancellation until 24h before check-in
+        type: string
+      check_in_time:
+        example: "14:00"
+        type: string
+      check_out_time:
+        example: "12:00"
+        type: string
+    type: object
+  main.RegisterRequest:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      name:
+        example: John Doe
+        type: string
+      password:
+        example: password123
+        minLength: 6
+        type: string
+      phone:
+        example: "+628123456789"
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - phone
+    type: object
+  main.RoomAvailabilityResponse:
+    properties:
+      check_in:
+        example: "2025-01-15"
+        type: string
+      check_out:
+        example: "2025-01-17"
+        type: string
+      guests:
+        example: 2
+        type: integer
+      hotel_id:
+        example: 60cb194d-4cf3-4429-a4a3-9dbdd09cbcfe
+        type: string
+      hotel_name:
+        example: Bali Paradise Hotel
+        type: string
+      rooms:
+        items:
+          $ref: '#/definitions/main.AvailableRoom'
+        type: array
+    type: object
+  main.RoomInfo:
+    properties:
+      amenities:
+        example:
+        - WiFi
+        - AC
+        - Minibar
+        items:
+          type: string
+        type: array
+      beds:
+        example: 1 King Bed
+        type: string
+      hotel_id:
+        example: 60cb194d-4cf3-4429-a4a3-9dbdd09cbcfe
+        type: string
+      id:
+        example: room-001
+        type: string
+      max_guests:
+        example: 2
+        type: integer
+      name:
+        example: Deluxe Ocean View
+        type: string
+      size:
+        example: 45m²
+        type: string
+    type: object
+  main.SearchHotelResponse:
+    properties:
+      city:
+        example: Bali
+        type: string
+      country_code:
+        example: ID
+        type: string
+      id:
+        example: 60cb194d-4cf3-4429-a4a3-9dbdd09cbcfe
+        type: string
+      name:
+        example: Bali Paradise Hotel
+        type: string
+      rating:
+        example: 4.5
+        type: number
+    type: object
+  main.SearchHotelsRequest:
+    properties:
+      check_in:
+        example: "2025-01-15T00:00:00Z"
+        type: string
+      check_out:
+        example: "2025-01-17T00:00:00Z"
+        type: string
+      city:
+        example: Bali
+        type: string
+      guests:
+        example: 2
+        maximum: 10
+        minimum: 1
+        type: integer
+      max_price:
+        example: 500
+        type: integer
+      min_price:
+        example: 50
+        type: integer
+    required:
+    - check_in
+    - check_out
+    - city
+    - guests
+    type: object
+  main.SearchHotelsResponse:
+    properties:
+      hotels:
+        items:
+          $ref: '#/definitions/main.SearchHotelResponse'
+        type: array
+      page:
+        example: 1
+        type: integer
+      per_page:
+        example: 20
+        type: integer
+      total:
+        example: 25
+        type: integer
+      total_pages:
+        example: 2
+        type: integer
+    type: object
+  main.UserDetail:
+    properties:
+      created_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      email:
+        example: john@example.com
+        type: string
+      id:
+        example: 550b8b66-746f-4c65-8e0b-7fcb7c0c20d5
+        type: string
+      name:
+        example: John Doe
+        type: string
+      phone:
+        example: "+628123456789"
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.AuthResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: User login
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account
+      parameters:
+      - description: Registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: message":"User registered successfully","user":UserDetail
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "409":
+          description: Email already registered
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Register new user
+      tags:
+      - auth
+  /bookings:
+    post:
+      consumes:
+      - application/json
+      description: Create a new hotel booking (requires authentication)
+      parameters:
+      - description: Booking details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.CreateBookingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.BookingResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create booking
+      tags:
+      - bookings
+  /bookings/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific booking (requires authentication)
+      parameters:
+      - description: Booking ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.BookingResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Booking not found
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get booking
+      tags:
+      - bookings
+  /bookings/{id}/cancel:
+    post:
+      consumes:
+      - application/json
+      description: Cancel a specific booking (requires authentication)
+      parameters:
+      - description: Booking ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: message":"Booking cancelled successfully","booking":BookingResponse
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Booking not found
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cancel booking
+      tags:
+      - bookings
+  /bookings/my:
+    get:
+      consumes:
+      - application/json
+      description: Get all bookings for the authenticated user (requires authentication)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.MyBookingsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get my bookings
+      tags:
+      - bookings
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Check API health status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.HealthResponse'
+      summary: Health check
+      tags:
+      - health
+  /hotels/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific hotel
+      parameters:
+      - description: Hotel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.HotelDetailsResponse'
+        "404":
+          description: Hotel not found
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Get hotel details
+      tags:
+      - hotels
+  /hotels/{id}/images:
+    get:
+      consumes:
+      - application/json
+      description: Get all images for a specific hotel
+      parameters:
+      - description: Hotel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: images":[]Image
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Hotel not found
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Get hotel images
+      tags:
+      - hotels
+  /hotels/{id}/rooms:
+    get:
+      consumes:
+      - application/json
+      description: Get available rooms for a hotel with pricing
+      parameters:
+      - description: Hotel ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Check-in date (YYYY-MM-DD)
+        in: query
+        name: check_in
+        required: true
+        type: string
+      - description: Check-out date (YYYY-MM-DD)
+        in: query
+        name: check_out
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.RoomAvailabilityResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Hotel not found
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Get available rooms
+      tags:
+      - hotels
+  /payments:
+    post:
+      consumes:
+      - application/json
+      description: Create a payment for a booking (requires authentication)
+      parameters:
+      - description: Payment details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.CreatePaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.PaymentResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create payment
+      tags:
+      - payments
+  /payments/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get payment details (requires authentication)
+      parameters:
+      - description: Payment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.PaymentResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Payment not found
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get payment
+      tags:
+      - payments
+  /search/hotels:
+    post:
+      consumes:
+      - application/json
+      description: Search for available hotels by city and dates
+      parameters:
+      - description: Search criteria
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.SearchHotelsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.SearchHotelsResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Search hotels
+      tags:
+      - search
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Get authenticated user's profile (requires authentication)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.UserDetail'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - users
+swagger: "2.0"

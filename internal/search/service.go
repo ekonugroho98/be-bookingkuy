@@ -10,6 +10,8 @@ import (
 // Service defines interface for search business logic
 type Service interface {
 	SearchHotels(ctx context.Context, req *SearchRequest, opts *SearchOptions) (*SearchResult, error)
+	Autocomplete(ctx context.Context, query string, limit int) (*AutocompleteResponse, error)
+	GetPopularDestinations(ctx context.Context, limit int) ([]AutocompleteResult, error)
 }
 
 type service struct {
@@ -53,4 +55,39 @@ func (s *service) SearchHotels(ctx context.Context, req *SearchRequest, opts *Se
 
 	logger.Infof("Found %d hotels (page %d of %d)", result.Total, result.Page, result.TotalPages)
 	return result, nil
+}
+
+// Autocomplete provides search suggestions for cities and hotels
+func (s *service) Autocomplete(ctx context.Context, query string, limit int) (*AutocompleteResponse, error) {
+	// Validate query length
+	if len(query) < 2 {
+		return &AutocompleteResponse{
+			Query:   query,
+			Results: []AutocompleteResult{},
+		}, nil
+	}
+
+	logger.Infof("Autocomplete search for: %s", query)
+
+	opts := &AutocompleteOptions{Limit: limit}
+	result, err := s.repo.Autocomplete(ctx, query, opts)
+	if err != nil {
+		logger.ErrorWithErr(err, "Failed to get autocomplete results")
+		return nil, fmt.Errorf("failed to get autocomplete: %w", err)
+	}
+
+	return result, nil
+}
+
+// GetPopularDestinations returns popular destination cities
+func (s *service) GetPopularDestinations(ctx context.Context, limit int) ([]AutocompleteResult, error) {
+	logger.Infof("Fetching popular destinations (limit: %d)", limit)
+
+	results, err := s.repo.GetPopularDestinations(ctx, limit)
+	if err != nil {
+		logger.ErrorWithErr(err, "Failed to get popular destinations")
+		return nil, fmt.Errorf("failed to get popular destinations: %w", err)
+	}
+
+	return results, nil
 }

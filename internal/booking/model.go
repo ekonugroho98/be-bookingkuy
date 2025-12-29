@@ -22,27 +22,32 @@ const (
 type PaymentType string
 
 const (
-	PaymentTypePayNow   PaymentType = "PAY_NOW"
+	PaymentTypePayNow    PaymentType = "PAY_NOW"
 	PaymentTypePayAtHotel PaymentType = "PAY_AT_HOTEL"
+	PaymentTypePayLater  PaymentType = "PAY_LATER"
 )
 
 // Booking represents a booking
 type Booking struct {
-	ID               string        `json:"id" db:"id"`
-	UserID           string        `json:"user_id" db:"user_id"`
-	HotelID          string        `json:"hotel_id" db:"hotel_id"`
-	RoomID           string        `json:"room_id" db:"room_id"`
-	BookingReference string        `json:"booking_reference" db:"booking_reference"`
-	SupplierReference string       `json:"supplier_reference,omitempty" db:"supplier_reference"`
-	CheckIn          time.Time     `json:"check_in" db:"check_in"`
-	CheckOut         time.Time     `json:"check_out" db:"check_out"`
-	Guests           int           `json:"guests" db:"guests"`
-	Status           BookingStatus `json:"status" db:"status"`
-	TotalAmount      int           `json:"total_amount" db:"total_amount"`
-	Currency         string        `json:"currency" db:"currency"`
-	PaymentType      PaymentType   `json:"payment_type" db:"payment_type"`
-	CreatedAt        time.Time     `json:"created_at" db:"created_at"`
-	UpdatedAt        time.Time     `json:"updated_at" db:"updated_at"`
+	ID                string        `json:"id" db:"id"`
+	UserID            string        `json:"user_id" db:"user_id"`
+	HotelID           string        `json:"hotel_id" db:"hotel_id"`
+	RoomID            string        `json:"room_id" db:"room_id"`
+	BookingReference  string        `json:"booking_reference" db:"booking_reference"`
+	SupplierReference string        `json:"supplier_reference,omitempty" db:"supplier_reference"`
+	CheckIn           time.Time     `json:"check_in" db:"check_in"`
+	CheckOut          time.Time     `json:"check_out" db:"check_out"`
+	Guests            int           `json:"guests" db:"guests"`
+	GuestName         string        `json:"guest_name,omitempty" db:"guest_name"`
+	GuestEmail        string        `json:"guest_email,omitempty" db:"guest_email"`
+	GuestPhone        string        `json:"guest_phone,omitempty" db:"guest_phone"`
+	SpecialRequests   string        `json:"special_requests,omitempty" db:"special_requests"`
+	Status            BookingStatus `json:"status" db:"status"`
+	TotalAmount       int           `json:"total_amount" db:"total_amount"`
+	Currency          string        `json:"currency" db:"currency"`
+	PaymentType       PaymentType   `json:"payment_type" db:"payment_type"`
+	CreatedAt         time.Time     `json:"created_at" db:"created_at"`
+	UpdatedAt         time.Time     `json:"updated_at" db:"updated_at"`
 }
 
 // CreateBookingRequest represents request to create booking
@@ -53,6 +58,15 @@ type CreateBookingRequest struct {
 	CheckOut    time.Time    `json:"check_out" validate:"required,gtfield=CheckIn"`
 	Guests      int          `json:"guests" validate:"required,min=1,max=10"`
 	PaymentType PaymentType  `json:"payment_type" validate:"required,oneof=PAY_NOW PAY_AT_HOTEL"`
+}
+
+// UpdateBookingRequest represents request to update booking
+type UpdateBookingRequest struct {
+	GuestName        string      `json:"guest_name,omitempty"`
+	GuestEmail       string      `json:"guest_email,omitempty"`
+	GuestPhone       string      `json:"guest_phone,omitempty"`
+	SpecialRequests  string      `json:"special_requests,omitempty"`
+	PaymentType      PaymentType `json:"payment_type,omitempty"`
 }
 
 // NewBooking creates a new booking

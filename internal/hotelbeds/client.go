@@ -86,22 +86,21 @@ func (c *Client) Do(ctx context.Context, method, endpoint string, body interface
 
 // setHeaders sets required headers for Hotelbeds API
 func (c *Client) setHeaders(req *http.Request) {
+	// Hotelbeds signature format: SHA256(apiKey + secret + timestampInSeconds)
+	timestampInSeconds := time.Now().Unix()
+
 	// Set standard headers
 	req.Header.Set("Api-Key", c.apiKey)
-	req.Header.Set("X-Signature", c.generateSignature())
+	req.Header.Set("X-Signature", c.generateSignature(timestampInSeconds))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-
-	// Set timestamp
-	timestamp := time.Now().Format("2006-01-02T15:04:05Z")
-	req.Header.Set("X-Timestamp", timestamp)
 }
 
 // generateSignature generates Hotelbeds API signature
-func (c *Client) generateSignature() string {
-	// Hotelbeds signature format: SHA256(sharedSecret + timestamp)
-	timestamp := time.Now().Format("2006-01-02T15:04:05Z")
-	data := c.sharedSecret + timestamp
+func (c *Client) generateSignature(timestampInSeconds int64) string {
+	// Hotelbeds signature format: SHA256(apiKey + secret + timestampInSeconds)
+	// See: https://developer.hotelbeds.com/documentation/getting-started/
+	data := c.apiKey + c.sharedSecret + fmt.Sprintf("%d", timestampInSeconds)
 
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])

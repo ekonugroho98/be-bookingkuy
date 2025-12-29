@@ -38,7 +38,7 @@ func (s *service) Register(ctx context.Context, req *RegisterRequest) (*user.Use
 	// Check if email already exists
 	existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err == nil && existingUser != nil {
-		return nil, errors.New("email already registered")
+		return nil, ErrUserExists
 	}
 
 	// Hash password
@@ -80,19 +80,19 @@ func (s *service) Login(ctx context.Context, req *LoginRequest) (*LoginResponse,
 	// Get user by email
 	existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil || existingUser == nil {
-		return nil, errors.New("invalid email or password")
+		return nil, ErrInvalidCredentials
 	}
 
 	// Get password hash
 	userID, passwordHash, err := s.authRepo.GetPassword(ctx, req.Email)
 	if err != nil {
 		logger.ErrorWithErr(err, "Failed to get password")
-		return nil, errors.New("invalid email or password")
+		return nil, ErrInvalidCredentials
 	}
 
 	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(req.Password)); err != nil {
-		return nil, errors.New("invalid email or password")
+		return nil, ErrInvalidCredentials
 	}
 
 	// Generate JWT token
